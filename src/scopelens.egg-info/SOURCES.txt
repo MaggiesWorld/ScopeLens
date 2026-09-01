@@ -1,0 +1,8 @@
+LICENSE
+README.md
+pyproject.toml
+src/scopelens/__init__.py
+src/scopelens.egg-info/PKG-INFO
+src/scopelens.egg-info/SOURCES.txt
+src/scopelens.egg-info/dependency_links.txt
+src/scopelens.egg-info/top_level.txt
