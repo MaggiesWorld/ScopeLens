@@ -5,7 +5,7 @@ from scopelens.models import InspectionResult
 
 
 def write_context_package(
-    result: InspectionResult,
+    result: InspectionResult | dict,
     output_path: str | Path,
 ) -> Path:
     destination = Path(output_path)
@@ -15,9 +15,15 @@ def write_context_package(
         exist_ok=True,
     )
 
+    payload = (
+        result.to_dict()
+        if isinstance(result, InspectionResult)
+        else result
+    )
+
     destination.write_text(
         json.dumps(
-            result.to_dict(),
+            payload,
             indent=2,
             ensure_ascii=False,
         ),

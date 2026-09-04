@@ -62,3 +62,34 @@ def test_json_file_inspection_contains_facts(tmp_path):
     ]
     assert facts["item_count"] == 2
     assert facts["extraction_status"] == "success"
+
+def test_java_file_inspection_contains_facts(tmp_path):
+    java_file = tmp_path / "LoginTests.java"
+
+    java_file.write_text(
+        """
+package tests.login;
+
+import org.testng.annotations.Test;
+
+public class LoginTests {
+
+    @Test
+    public void validLogin() {
+    }
+}
+""",
+        encoding="utf-8",
+    )
+
+    details = inspect_file(
+        java_file,
+        description="login test",
+    )
+
+    facts = details["facts"]
+
+    assert facts["package"] == "tests.login"
+    assert facts["classes"] == ["LoginTests"]
+    assert facts["test_methods"] == ["validLogin"]
+    assert facts["contains_tests"] is True

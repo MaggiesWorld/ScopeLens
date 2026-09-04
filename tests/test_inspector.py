@@ -362,3 +362,38 @@ def test_folder_inspection_includes_project_facts(tmp_path):
         ".json": 1,
         ".py": 1,
     }
+
+def test_java_facts_survive_result_serialization(tmp_path):
+    java_file = tmp_path / "LoginTests.java"
+
+    java_file.write_text(
+        """
+package tests.login;
+
+import org.testng.annotations.Test;
+
+public class LoginTests {
+
+    @Test
+    public void validLogin() {
+    }
+}
+""",
+        encoding="utf-8",
+    )
+
+    result = inspect_target(
+        java_file,
+        InspectionOptions(
+            description="login test",
+        ),
+    )
+
+    serialized = result.to_dict()
+
+    facts = serialized["details"]["facts"]
+
+    assert facts["package"] == "tests.login"
+    assert facts["classes"] == ["LoginTests"]
+    assert facts["test_methods"] == ["validLogin"]
+    assert facts["contains_tests"] is True

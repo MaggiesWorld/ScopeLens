@@ -4,6 +4,7 @@ import tomllib
 import configparser
 import csv
 import xml.etree.ElementTree as ET
+import re
 from pathlib import Path
 
 MAX_PARSE_CHARS = 100_000
@@ -282,6 +283,351 @@ def extract_xml_facts(
         "extraction_reason": None,
     }
 
+def extract_java_facts(
+    path: Path,
+) -> dict:
+    import re
+
+    content = path.read_text(
+        encoding="utf-8",
+        errors="ignore",
+    )
+
+    if len(content) > MAX_PARSE_CHARS:
+        return {
+            "package": None,
+            "imports": [],
+            "classes": [],
+            "interfaces": [],
+            "methods": [],
+            "annotations": [],
+            "test_methods": [],
+            "contains_tests": False,
+            "extraction_status": "skipped",
+            "extraction_reason": "file_too_large",
+        }
+
+    package_match = re.search(
+        r"\bpackage\s+([\w.]+)\s*;",
+        content,
+    )
+
+    imports = re.findall(
+        r"\bimport\s+(?:static\s+)?([\w.*]+)\s*;",
+        content,
+    )
+
+    classes = re.findall(
+        r"\bclass\s+(\w+)",
+        content,
+    )
+
+    interfaces = re.findall(
+        r"\binterface\s+(\w+)",
+        content,
+    )
+
+    methods = re.findall(
+        r"\b(?:public|protected|private)?\s*"
+        r"(?:static\s+)?"
+        r"[\w<>\[\], ?]+\s+"
+        r"(\w+)\s*\([^;{}]*\)\s*\{",
+        content,
+    )
+
+    annotations = re.findall(
+        r"@(\w+)",
+        content,
+    )
+
+    test_methods = re.findall(
+        r"@Test(?:\([^)]*\))?\s*"
+        r"(?:public|protected|private)?\s*"
+        r"(?:static\s+)?"
+        r"[\w<>\[\], ?]+\s+"
+        r"(\w+)\s*\(",
+        content,
+    )
+
+    return {
+        "package": (
+            package_match.group(1)
+            if package_match
+            else None
+        ),
+        "imports": sorted(set(imports)),
+        "classes": sorted(set(classes)),
+        "interfaces": sorted(set(interfaces)),
+        "methods": sorted(set(methods)),
+        "annotations": sorted(set(annotations)),
+        "test_methods": sorted(set(test_methods)),
+        "contains_tests": bool(test_methods),
+        "extraction_status": "success",
+        "extraction_reason": None,
+    }
+
+def extract_javascript_facts(
+    path: Path,
+) -> dict:
+    content = path.read_text(
+        encoding="utf-8",
+        errors="ignore",
+    )
+
+    empty_facts = {
+        "imports": [],
+        "functions": [],
+        "classes": [],
+        "methods": [],
+        "test_functions": [],
+        "describe_blocks": [],
+        "contains_tests": False,
+    }
+
+    if len(content) > MAX_PARSE_CHARS:
+        return {
+            **empty_facts,
+            "extraction_status": "skipped",
+            "extraction_reason": "file_too_large",
+        }
+
+    imports = re.findall(
+        r'import\s+(?:.+?\s+from\s+)?["\']([^"\']+)["\']',
+        content,
+    )
+
+    functions = re.findall(
+    r'\b(?:export\s+)?(?:async\s+)?function\s+(\w+)\s*\(',
+    content,
+)
+
+    arrow_functions = re.findall(
+        r'\b(?:export\s+)?'
+        r'(?:const|let|var)\s+'
+        r'(\w+)'
+        r'(?:\s*:\s*[\w<>\[\]|&, .]+)?'
+        r'\s*=\s*'
+        r'(?:async\s+)?'
+        r'(?:\([^)]*\)|\w+)'
+        r'(?:\s*:\s*[^=]+?)?'
+        r'\s*=>',
+        content,
+    )
+
+    functions.extend(arrow_functions)
+
+    classes = re.findall(
+        r'\bclass\s+(\w+)',
+        content,
+    )
+
+    methods = re.findall(
+        r'^\s*(?!if\b|for\b|while\b|switch\b|catch\b)'
+        r'(?:async\s+)?(\w+)\s*\([^)]*\)\s*\{',
+        content,
+        re.MULTILINE,
+    )
+
+    test_functions = re.findall(
+        r'\b(?:test|it)\s*\(\s*["\']([^"\']+)["\']',
+        content,
+    )
+
+    describe_blocks = re.findall(
+        r'\bdescribe\s*\(\s*["\']([^"\']+)["\']',
+        content,
+    )
+
+    return {
+        "imports": sorted(set(imports)),
+        "functions": sorted(set(functions)),
+        "classes": sorted(set(classes)),
+        "methods": sorted(set(methods)),
+        "test_functions": sorted(set(test_functions)),
+        "describe_blocks": sorted(set(describe_blocks)),
+        "contains_tests": bool(
+            test_functions
+            or describe_blocks
+        ),
+        "extraction_status": "success",
+        "extraction_reason": None,
+    }
+
+def extract_csharp_facts(
+    path: Path,
+) -> dict:
+    content = path.read_text(
+        encoding="utf-8",
+        errors="ignore",
+    )
+
+    empty_facts = {
+        "namespace": None,
+        "usings": [],
+        "classes": [],
+        "interfaces": [],
+        "methods": [],
+        "attributes": [],
+        "test_methods": [],
+        "contains_tests": False,
+    }
+
+    if len(content) > MAX_PARSE_CHARS:
+        return {
+            **empty_facts,
+            "extraction_status": "skipped",
+            "extraction_reason": "file_too_large",
+        }
+
+    namespace_match = re.search(
+        r"\bnamespace\s+([\w.]+)",
+        content,
+    )
+
+    usings = re.findall(
+        r"\busing\s+([\w.]+)\s*;",
+        content,
+    )
+
+    classes = re.findall(
+        r"\bclass\s+(\w+)",
+        content,
+    )
+
+    interfaces = re.findall(
+        r"\binterface\s+(\w+)",
+        content,
+    )
+
+    methods = re.findall(
+        r"\b(?:public|private|protected|internal)\s+"
+        r"(?:static\s+)?"
+        r"[\w<>\[\], ?]+\s+"
+        r"(\w+)\s*\([^;{}]*\)\s*\{",
+        content,
+    )
+
+    attributes = re.findall(
+        r"\[(\w+)(?:\([^]]*\))?\]",
+        content,
+    )
+
+    test_methods = re.findall(
+        r"\[(?:Test|Fact|TestMethod|TestCase|Theory|DataTestMethod)(?:\([^]]*\))?\]\s*"
+        r"(?:\[[^\]]+\]\s*)*"
+        r"(?:public|private|protected|internal)\s+"
+        r"(?:static\s+)?"
+        r"[\w<>\[\], ?]+\s+"
+        r"(\w+)\s*\(",
+        content,
+    )
+
+    return {
+        "namespace": (
+            namespace_match.group(1)
+            if namespace_match
+            else None
+        ),
+        "usings": sorted(set(usings)),
+        "classes": sorted(set(classes)),
+        "interfaces": sorted(set(interfaces)),
+        "methods": sorted(set(methods)),
+        "attributes": sorted(set(attributes)),
+        "test_methods": sorted(set(test_methods)),
+        "contains_tests": bool(test_methods),
+        "extraction_status": "success",
+        "extraction_reason": None,
+    }
+
+def extract_c_cpp_facts(
+    path: Path,
+) -> dict:
+    content = path.read_text(
+        encoding="utf-8",
+        errors="ignore",
+    )
+
+    empty_facts = {
+        "includes": [],
+        "functions": [],
+        "structs": [],
+        "classes": [],
+        "namespaces": [],
+        "test_functions": [],
+        "contains_tests": False,
+    }
+
+    if len(content) > MAX_PARSE_CHARS:
+        return {
+            **empty_facts,
+            "extraction_status": "skipped",
+            "extraction_reason": "file_too_large",
+        }
+
+    includes = re.findall(
+        r'#include\s*[<"]([^>"]+)[>"]',
+        content,
+    )
+
+    functions = re.findall(
+        r'^\s*(?:static\s+)?'
+        r'[\w:*&<>\[\]\s]+\s+'
+        r'(\w+)\s*\([^;{}]*\)\s*\{',
+        content,
+        re.MULTILINE,
+    )
+
+    structs = re.findall(
+        r'\bstruct\s+(\w+)',
+        content,
+    )
+
+    classes = re.findall(
+        r'\bclass\s+(\w+)',
+        content,
+    )
+
+    namespaces = re.findall(
+        r'\bnamespace\s+(\w+)',
+        content,
+    )
+
+    test_functions = [
+        name
+        for name in functions
+        if name.lower().startswith("test")
+    ]
+
+    gtest_functions = re.findall(
+        r'\bTEST(?:_F)?\s*\(\s*'
+        r'(\w+)\s*,\s*(\w+)\s*\)',
+        content,
+    )
+
+    test_functions.extend(
+        f"{suite}.{name}"
+        for suite, name in gtest_functions
+    )
+
+    catch2_functions = re.findall(
+        r'\bTEST_CASE\s*\(\s*["\']([^"\']+)["\']',
+        content,
+    )
+
+    test_functions.extend(catch2_functions)
+
+    return {
+        "includes": sorted(set(includes)),
+        "functions": sorted(set(functions)),
+        "structs": sorted(set(structs)),
+        "classes": sorted(set(classes)),
+        "namespaces": sorted(set(namespaces)),
+        "test_functions": sorted(set(test_functions)),
+        "contains_tests": bool(test_functions),
+        "extraction_status": "success",
+        "extraction_reason": None,
+    }
+
 FACT_EXTRACTORS = {
     ".py": extract_python_facts,
     ".json": extract_json_facts,
@@ -290,6 +636,17 @@ FACT_EXTRACTORS = {
     ".cfg": extract_ini_facts,
     ".csv": extract_csv_facts,
     ".xml": extract_xml_facts,
+    ".py": extract_python_facts,
+    ".java": extract_java_facts,
+    ".js": extract_javascript_facts,
+    ".jsx": extract_javascript_facts,
+    ".ts": extract_javascript_facts,
+    ".tsx": extract_javascript_facts,
+    ".cs": extract_csharp_facts,
+    ".c": extract_c_cpp_facts,
+    ".h": extract_c_cpp_facts,
+    ".cpp": extract_c_cpp_facts,
+    ".hpp": extract_c_cpp_facts,
 }
 
 def extract_file_facts(

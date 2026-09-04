@@ -21,3 +21,8 @@ def test_public_api(tmp_path):
     )
 
     assert result.candidates
+
+def test_public_api_exposes_browser_interrogation():
+    from scopelens import interrogate_browser
+
+    assert callable(interrogate_browser)

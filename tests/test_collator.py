@@ -189,4 +189,48 @@ def test_collated_json_candidate_contains_facts(tmp_path):
     assert facts["item_count"] == 2
     assert facts["extraction_status"] == "success"
 
+def test_collated_java_candidate_contains_facts(tmp_path):
+    java_file = tmp_path / "LoginTests.java"
+
+    java_file.write_text(
+        """
+package tests.login;
+
+import org.testng.annotations.Test;
+
+public class LoginTests {
+
+    @Test
+    public void validLogin() {
+    }
+}
+""",
+        encoding="utf-8",
+    )
+
+    items = [
+        DiscoveryItem(
+            name="LoginTests.java",
+            type="file",
+            category="source",
+            size_bytes=java_file.stat().st_size,
+            relevance_score=5,
+        )
+    ]
+
+    candidates = collate_candidates(
+        root_path=tmp_path,
+        items=items,
+        description="login test",
+    )
+
+    assert len(candidates) == 1
+
+    facts = candidates[0].facts
+
+    assert facts["package"] == "tests.login"
+    assert facts["classes"] == ["LoginTests"]
+    assert facts["test_methods"] == ["validLogin"]
+    assert facts["contains_tests"] is True
+
     

@@ -152,3 +152,200 @@ def test_written_folder_package_includes_project_facts(tmp_path):
         ".json": 1,
         ".py": 1,
     }
+
+def test_written_java_package_includes_facts(tmp_path):
+    java_file = tmp_path / "LoginTests.java"
+
+    java_file.write_text(
+        """
+package tests.login;
+
+import org.testng.annotations.Test;
+
+public class LoginTests {
+
+    @Test
+    public void validLogin() {
+    }
+}
+""",
+        encoding="utf-8",
+    )
+
+    result = inspect_target(
+        java_file,
+        InspectionOptions(
+            description="login test",
+        ),
+    )
+
+    output_file = tmp_path / "context.json"
+
+    write_context_package(
+        result,
+        output_file,
+    )
+
+    package = json.loads(
+        output_file.read_text(encoding="utf-8")
+    )
+
+    facts = package["details"]["facts"]
+
+    assert facts["package"] == "tests.login"
+    assert facts["classes"] == ["LoginTests"]
+    assert facts["test_methods"] == ["validLogin"]
+    assert facts["contains_tests"] is True
+
+def test_write_context_package_preserves_csharp_facts(tmp_path):
+    source_file = tmp_path / "LoginTests.cs"
+
+    source_file.write_text(
+        """
+using NUnit.Framework;
+
+namespace Demo.Tests
+{
+    public class LoginTests
+    {
+        [Test]
+        public void ValidLogin()
+        {
+        }
+    }
+}
+""",
+        encoding="utf-8",
+    )
+
+    result = inspect_target(
+        str(source_file),
+        InspectionOptions(
+            description="login test",
+        ),
+    )
+
+    output_file = tmp_path / "context.json"
+
+    write_context_package(
+        result,
+        output_file,
+    )
+
+    package = json.loads(
+        output_file.read_text(
+            encoding="utf-8",
+        )
+    )
+
+    facts = package["candidates"][0]["facts"]
+
+    assert facts["namespace"] == "Demo.Tests"
+    assert facts["classes"] == [
+        "LoginTests",
+    ]
+    assert facts["test_methods"] == [
+        "ValidLogin",
+    ]
+    assert facts["contains_tests"] is True
+
+def test_write_context_package_preserves_cpp_facts(tmp_path):
+    source_file = tmp_path / "calculator_test.cpp"
+
+    source_file.write_text(
+        """
+#include <gtest/gtest.h>
+
+namespace demo
+{
+    class Calculator
+    {
+    public:
+        int add(int a, int b)
+        {
+            return a + b;
+        }
+    };
+}
+
+TEST(CalculatorTests, AddsNumbers)
+{
+    EXPECT_EQ(3, 1 + 2);
+}
+""",
+        encoding="utf-8",
+    )
+
+    result = inspect_target(
+        str(source_file),
+        InspectionOptions(
+            description="calculator test",
+        ),
+    )
+
+    output_file = tmp_path / "context.json"
+
+    write_context_package(
+        result,
+        output_file,
+    )
+
+    package = json.loads(
+        output_file.read_text(
+            encoding="utf-8",
+        )
+    )
+
+    facts = package["candidates"][0]["facts"]
+
+    assert facts["includes"] == [
+        "gtest/gtest.h",
+    ]
+    assert facts["classes"] == [
+        "Calculator",
+    ]
+    assert facts["namespaces"] == [
+        "demo",
+    ]
+    assert facts["test_functions"] == [
+        "CalculatorTests.AddsNumbers",
+    ]
+    assert facts["contains_tests"] is True
+def test_write_context_package_accepts_browser_context(tmp_path):
+    browser_context = {
+        "target_type": "browser",
+        "start_url": "https://example.com/",
+        "page_count": 1,
+        "pages": [
+            {
+                "url": "https://example.com/",
+                "title": "Home",
+                "testable_elements": [
+                    {
+                        "tag": "button",
+                        "selectors": [
+                            "#save",
+                        ],
+                    }
+                ],
+            }
+        ],
+    }
+
+    output_file = tmp_path / "browser-context.json"
+
+    written_path = write_context_package(
+        browser_context,
+        output_file,
+    )
+
+    package = json.loads(
+        written_path.read_text(
+            encoding="utf-8",
+        )
+    )
+
+    assert package["target_type"] == "browser"
+    assert package["start_url"] == "https://example.com/"
+    assert package["page_count"] == 1
+    assert package["pages"][0]["title"] == "Home"

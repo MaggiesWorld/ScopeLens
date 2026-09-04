@@ -12,7 +12,9 @@ license = { file = "LICENSE" }
 authors = [
     { name = "Margaret D. Thomas" }
 ]
-dependencies = []
+dependencies = [
+    "websocket-client>=1.8.0",
+]
 
 [tool.setuptools.packages.find]
 where = ["src"]
