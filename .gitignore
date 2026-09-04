@@ -9,10 +9,10 @@
 *.user
 *.userosscache
 *.sln.docstates
+smoke_site/
 output/
 data/
 tests/
-dist/
 *venv*/
 
 .env*
