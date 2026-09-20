@@ -389,7 +389,44 @@ def test_direct_json_collection_returns_relevant_item_candidates(
     assert "TC-001" in candidate_names
     assert "TC-003" in candidate_names
     assert "TC-002" not in candidate_names
-    
+
+def test_inspect_structured_json_excludes_unrelated_items(tmp_path):
+    target = tmp_path / "master_tests.json"
+
+    target.write_text(
+        """
+{
+    "tests": [
+        {
+            "id": "TC-001",
+            "title": "Add product to shopping cart",
+            "description": "Verify a product can be added to the cart"
+        },
+        {
+            "id": "TC-002",
+            "title": "Complete checkout",
+            "description": "Verify checkout completes successfully"
+        },
+        {
+            "id": "TC-003",
+            "title": "Remove product from shopping cart",
+            "description": "Verify a product can be removed from the cart"
+        }
+    ]
+}
+""",
+        encoding="utf-8",
+    )
+
+    inspection = inspect_target(
+        str(target),
+        options=InspectionOptions(
+            description="login authentication",
+        ),
+    )
+
+    assert inspection.candidates == []
+
 
 def test_folder_inspection_includes_project_facts(tmp_path):
     (tmp_path / "src").mkdir()

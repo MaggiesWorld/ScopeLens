@@ -67,14 +67,7 @@ def terms_are_related(
         second,
     ).ratio()
 
-    if similarity >= threshold:
-        print(
-            f"RELATED: {first!r} -> {second!r} "
-            f"({similarity:.2f})"
-        )
-        return True
-
-    return False
+    return similarity >= threshold
 
 def score_text_relevance(
     content: str,
