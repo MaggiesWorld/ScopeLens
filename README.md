@@ -162,6 +162,33 @@ For example, given a JSON file containing a collection of test cases:
   ]
 }
 
+Use the standard inspect_target() API with a relevance description:
+
+from scopelens import inspect_target, InspectionOptions
+
+result = inspect_target(
+    "master_tests.json",
+    options=InspectionOptions(
+        description="login authentication",
+    ),
+)
+
+for candidate in result.candidates:
+    print(candidate.name)
+    print(candidate.relevance_score)
+    print(candidate.content)
+
+ScopeLens evaluates the individual objects within JSON list collections and returns
+the relevant objects as candidates rather than requiring the consumer to parse the
+entire JSON file.
+
+Candidate names use the item's id when available, then name, and otherwise
+fall back to the collection name and item index.
+
+This behavior uses the same inspect_target() API as other ScopeLens inspections;
+no JSON-specific command is required.
+
+
 ### Browser Interrogation
 
 Chrome must be running with remote debugging enabled.
