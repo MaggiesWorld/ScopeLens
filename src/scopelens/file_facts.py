@@ -96,14 +96,14 @@ def extract_json_facts(
         errors="ignore",
     )
 
-    if len(content) > MAX_PARSE_CHARS:
-        return {
-            "top_level_keys": [],
-            "root_type": None,
-            "extraction_status": "skipped",
-            "extraction_reason": "file_too_large",
-            "item_count": None,
-        }
+    # if len(content) > MAX_PARSE_CHARS:
+    #    return {
+    #        "top_level_keys": [],
+    #        "root_type": None,
+    #        "extraction_status": "skipped",
+    #        "extraction_reason": "file_too_large",
+    #        "item_count": None,
+    #    }
 
     try:
         data = json.loads(content)
