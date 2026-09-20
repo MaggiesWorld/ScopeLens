@@ -15,6 +15,12 @@ from scopelens.collator import (
 from scopelens.structure_inspector import inspect_structure
 from scopelens.project_facts import extract_project_facts
 
+import json
+
+from scopelens.structured_candidates import (
+    build_json_item_candidates,
+)
+
 def inspect_target(
     path: str,
     options: InspectionOptions | None = None,
@@ -46,36 +52,55 @@ def inspect_target(
                     errors="ignore",
                 )
 
-                truncated = len(content) > MAX_CONTENT_CHARS
+                if target.path.suffix.lower() == ".json":
+                    try:
+                        structured_data = json.loads(content)
 
-                if truncated:
-                    snippets = extract_relevant_snippets(
-                        content,
-                        options.description,
-                    )
+                        structured_candidates = (
+                            build_json_item_candidates(
+                                structured_data,
+                                options.description,
+                                options.minimum_relevance_score,
+                            )
+                        )
 
-                    if snippets:
-                        content = snippets[:MAX_CONTENT_CHARS]
-                    else:
-                        content = content[:MAX_CONTENT_CHARS]
+                        if structured_candidates:
+                            candidates = structured_candidates[
+                                :options.max_candidates
+                            ]
+                    except json.JSONDecodeError:
+                        pass
 
-                candidates = [
-                    Candidate(
-                        name=target.path.name,
-                        type="file",
-                        category=details["category"],
-                        size_bytes=details["size_bytes"],
-                        relevance_score=details["relevance_score"],
-                        content=content,
-                        truncated=truncated,
-                        relevance_explanation=explain_relevance(
-                            target.path,
+                if not candidates:
+                    truncated = len(content) > MAX_CONTENT_CHARS
+
+                    if truncated:
+                        snippets = extract_relevant_snippets(
+                            content,
                             options.description,
-                        ),
-                         facts=details.get("facts", {}),
+                        )
 
-                    )
-                ]
+                        if snippets:
+                            content = snippets[:MAX_CONTENT_CHARS]
+                        else:
+                            content = content[:MAX_CONTENT_CHARS]
+
+                    candidates = [
+                        Candidate(
+                            name=target.path.name,
+                            type="file",
+                            category=details["category"],
+                            size_bytes=details["size_bytes"],
+                            relevance_score=details["relevance_score"],
+                            content=content,
+                            truncated=truncated,
+                            relevance_explanation=explain_relevance(
+                                target.path,
+                                options.description,
+                            ),
+                            facts=details.get("facts", {}),
+                        )
+                    ]
 
     else:
         details = inspect_folder(

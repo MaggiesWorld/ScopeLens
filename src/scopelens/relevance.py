@@ -69,6 +69,57 @@ def terms_are_related(
 
     return similarity >= threshold
 
+def score_text_relevance(
+    content: str,
+    description: str,
+) -> int:
+    """Score in-memory text against a relevance description."""
+
+    score = 0
+
+    search_terms = normalize_search_terms(
+        description
+    )
+
+    search_phrase = normalize_phrase(
+        description
+    )
+
+    normalized_content = content.lower()
+
+    content_terms = set(
+        re.findall(
+            r"[a-zA-Z0-9]+",
+            normalized_content,
+        )
+    )
+
+    if (
+        search_phrase
+        and search_phrase in normalized_content
+    ):
+        score += 3
+
+    for term in search_terms:
+        if term in normalized_content:
+            score += 1
+
+    for search_term in search_terms:
+        if search_term in content_terms:
+            continue
+
+        if any(
+            terms_are_related(
+                search_term,
+                content_term,
+            )
+            for content_term in content_terms
+        ):
+            score += 1
+
+    return score
+
+
 def score_relevance(
     path: Path,
     description: str,

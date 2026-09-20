@@ -184,7 +184,7 @@ def test_invalid_json_returns_parse_error(tmp_path):
         "extraction_reason": "parse_error",
     }
 
-def test_large_json_file_skips_fact_parsing(tmp_path):
+def test_large_json_file_extracts_facts(tmp_path):
     test_file = tmp_path / "large.json"
 
     test_file.write_text(
@@ -193,13 +193,11 @@ def test_large_json_file_skips_fact_parsing(tmp_path):
 
     result = extract_file_facts(test_file)
 
-    assert result == {
-        "top_level_keys": [],
-        "root_type": None,
-        "item_count": None,
-        "extraction_status": "skipped",
-        "extraction_reason": "file_too_large",
-    }
+    assert result["top_level_keys"] == ["data"]
+    assert result["root_type"] == "dict"
+    assert result["item_count"] == 1
+    assert result["extraction_status"] == "success"
+    assert result["extraction_reason"] is None
 
 def test_json_array_facts_include_item_count(tmp_path):
     test_file = tmp_path / "tests.json"

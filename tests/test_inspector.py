@@ -343,6 +343,54 @@ def test_direct_json_facts_survive_serialization(tmp_path):
     assert facts["item_count"] == 2
     assert facts["extraction_status"] == "success"
 
+
+def test_direct_json_collection_returns_relevant_item_candidates(
+    tmp_path,
+):
+    test_file = tmp_path / "master_tests.json"
+
+    test_file.write_text(
+        """
+        {
+          "test_cases": [
+            {
+              "id": "TC-001",
+              "title": "Verify successful login",
+              "description": "Authenticate with valid credentials"
+            },
+            {
+              "id": "TC-002",
+              "title": "Verify shopping cart",
+              "description": "Add product to cart"
+            },
+            {
+              "id": "TC-003",
+              "title": "Verify invalid login",
+              "description": "Reject invalid authentication credentials"
+            }
+          ]
+        }
+        """,
+        encoding="utf-8",
+    )
+
+    result = inspect_target(
+        test_file,
+        options=InspectionOptions(
+            description="login authentication",
+        ),
+    )
+
+    candidate_names = [
+        candidate.name
+        for candidate in result.candidates
+    ]
+
+    assert "TC-001" in candidate_names
+    assert "TC-003" in candidate_names
+    assert "TC-002" not in candidate_names
+    
+
 def test_folder_inspection_includes_project_facts(tmp_path):
     (tmp_path / "src").mkdir()
     (tmp_path / "src" / "app.py").write_text(

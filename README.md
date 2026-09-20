@@ -138,6 +138,30 @@ print(result.candidates)
 
 ScopeLens determines whether the supplied target is a file or folder and performs the appropriate interrogation.
 
+
+### Structured JSON Item Discovery
+
+ScopeLens can inspect structured JSON collections and return individually relevant
+items as candidates.
+
+For example, given a JSON file containing a collection of test cases:
+
+```json
+{
+  "test_cases": [
+    {
+      "id": "TC-001",
+      "title": "Verify successful login",
+      "description": "Authenticate with valid credentials"
+    },
+    {
+      "id": "TC-002",
+      "title": "Verify shopping cart",
+      "description": "Add product to cart"
+    }
+  ]
+}
+
 ### Browser Interrogation
 
 Chrome must be running with remote debugging enabled.
